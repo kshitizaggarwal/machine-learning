@@ -1,0 +1,70 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+dataset = pd.read_csv("ex1data1.csv")
+x = dataset.iloc[:,:1].values
+y = dataset.iloc[:,-1].values
+
+x_avg = sum(x)/len(x)
+y_avg = sum(y)/len(y)
+
+k=0
+data = np.zeros((100,5))
+
+for i in range(len(x)):
+    x[i] -= x_avg
+
+for i in range(len(y)):
+    y[i] -= y_avg
+
+alpha =  0.01
+J_theta = np.zeros((1500,1))
+theta0 = 1
+theta1 = np.pi/2
+
+
+data[k][0] = alpha
+data[k][1] = theta0   #entered
+data[k][2] = theta1   #entered
+
+t0 = np.zeros((1500,1))
+t1 = np.zeros((1500,1))
+sum = 0
+sum1=0
+sum2=0
+p=0
+while(p < 1500):
+
+    sum = 0
+    for i in range(0,1):
+        sum =+ (theta0 + theta1*x[i] - y[i])**2
+    #J_theta[p]= sum/(2*len(x))
+    #updation
+    sum1 = 0
+    sum2 = 0
+    for i in range(0,len(x)):
+        sum1 =+ (theta0 + theta1*x[i] - y[i])
+        sum2 =+ (theta0 + theta1*x[i] - y[i]) * x[i]
+    
+    theta0 = theta0 - (alpha * (sum1))
+    theta1 = theta1 - (alpha * (sum2))
+    #print(theta0)
+    #print(theta1)
+    #t0[p] = theta0
+    #t1[p] = theta1
+    p=p+1
+
+data[k][3] = theta0
+data[k][4] = theta1
+k +=1
+
+sum1=0
+J_cost = np.zeros((len(x),1))
+for i in range(0,len(x)):
+    J_cost[i]=theta0 + theta1*x[i]
+
+plt.plot(x,theta0 + theta1*x, '-r')
+plt.scatter(x,y)
+plt.legend()
+plt.show()

@@ -1,0 +1,96 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+dataset = pd.read_csv("ex2data1.csv")
+
+X = dataset.iloc[:,:2].values
+Y = dataset.iloc[:,-1].values
+
+def sigmoid(a):
+    b = 1 + pow(np.e,-a)
+    b = 1/b
+    return b
+
+def cost(predY, y):
+    b = (y* np.log(predY) + ( 1 - y )* np.log ( 1 - predY ))
+    return -b
+
+def weightDerivative(predY, x, y):
+    b = (predY - y) * x
+    return b
+
+m = len(X)
+
+#calculating mean of data set
+mean = sum(X)/m
+X_min = X.min()
+X_max = X.max()
+
+#normalizing dataset X
+X_normalized = (np.subtract(X, mean)) / ( X_max - X_min )
+
+#creating seperate dataset for X_train and X_test
+X_train = X_normalized[:80,]
+X_test = X_normalized[80:,]
+
+#creating seperate dataset for Y_train and Y_test
+Y_train = Y[:80]
+Y_test = Y[80:]
+
+# user defined attributes
+# initializing bais theta0
+bias = np.array(0.1).reshape(1,1)
+
+# initializing weights theta1, theta2
+weights = np.array((0.1,0.1))
+weights = weights.reshape(1,2)
+
+j_theta = 0 
+dx_0 = 0
+dx = 0
+epoch = 100
+alpha = 0.001
+
+#training the data set
+for j in range(epoch):
+    t = j_theta
+    j_theta = 0
+    for i in range(len(X_train)):
+        #calculating a
+        a = np.matmul(weights,X_train[i].reshape(2,1)) + bias
+        total = sum(a.T)
+        
+        #calculating h(x)
+        predY = sigmoid(total)
+        
+        #calculating cost function J(theta)
+        j_theta = j_theta + cost(predY, Y_train[i])
+        dx_0 = dx_0 + weightDerivative(predY,1 ,Y_train[i])
+        dx = dx + weightDerivative(predY, X_train[i], Y_train[i])
+        
+    print("j_theta:{},j={}".format(j_theta,j))
+    
+    #updating thetas
+    weights = weights - (alpha * dx)
+    bias = bias - (alpha * dx_0)
+    
+#calculating predicted values of Y by using new obtained thetas
+new_a = np.matmul(weights, X_test.reshape(2,20)) + bias
+newY = sigmoid(new_a)
+
+# giving all the values of Y, Y =1 which are greater then 0.5
+pred_Y = np.ones((20,1))
+for i in range(len(Y_test)):
+    if newY.T[i] > 0.5:
+        pred_Y[i] = 1
+    else:
+        pred_Y[i] = 0
+
+# checking for the accuracy of the model     
+counter=0
+for i in range(len(Y_test)):
+    if pred_Y[i]==Y_test[i]:
+        counter = counter +1
+
+accuracy = counter/len(Y_test)    

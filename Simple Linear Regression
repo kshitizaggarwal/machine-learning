@@ -1,70 +1,50 @@
-import pandas as pd
+#importing libraries
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
-dataset = pd.read_csv("ex1data1.csv")
-x = dataset.iloc[:,:1].values
-y = dataset.iloc[:,-1].values
+#importing the dataset
+data_set = pd.read_csv("california_housing_train.csv")
 
-x_avg = sum(x)/len(x)
-y_avg = sum(y)/len(y)
+#taking X and Y_actual 
+X = data_set.iloc[:,3:4].values
+Y_actual = data_set.iloc[:,8:9].values
 
-k=0
-data = np.zeros((100,5))
+#plotting scatter plot to visualize the data
+plt.scatter(X,Y_actual)
 
-for i in range(len(x)):
-    x[i] -= x_avg
+#functions
 
-for i in range(len(y)):
-    y[i] -= y_avg
+#line function
+def line(m,x,c):
+    return (m * x) + c
 
-alpha =  0.01
-J_theta = np.zeros((1500,1))
-theta0 = 1
-theta1 = np.pi/2
+#error function
+def error(Y_pred, Y_act):
+    return np.mean(( Y_pred - Y_act ) ** 2)
 
+# derivative for m/slope
+def derivative_for_m(x, Y_pred, Y_act):
+    return np.mean(2 * ( Y_pred - Y_act) * x)
 
-data[k][0] = alpha
-data[k][1] = theta0   #entered
-data[k][2] = theta1   #entered
+# derivative for c/intercept
+def derivative_for_c(Y_pred, Y_act):
+    return np.mean(2 * ( Y_pred - Y_act))
 
-t0 = np.zeros((1500,1))
-t1 = np.zeros((1500,1))
-sum = 0
-sum1=0
-sum2=0
-p=0
-while(p < 1500):
+#user defined vairables
+m = np.random.random()      #slope
+c = np.random.random()      #intercept
+alpha = 0.0000000009        #learning rate
+iterations = 55             #no.of steps
 
-    sum = 0
-    for i in range(0,1):
-        sum =+ (theta0 + theta1*x[i] - y[i])**2
-    #J_theta[p]= sum/(2*len(x))
-    #updation
-    sum1 = 0
-    sum2 = 0
-    for i in range(0,len(x)):
-        sum1 =+ (theta0 + theta1*x[i] - y[i])
-        sum2 =+ (theta0 + theta1*x[i] - y[i]) * x[i]
+errors = []
+#training the dataset
+for i in range(iterations):
+    Y_pred = line(m,X,c)
+    errors.append(error(Y_pred, Y_actual))
+    m = m - alpha * derivative_for_m(X, Y_pred, Y_actual)
+    c = c - alpha * derivative_for_c(Y_pred, Y_actual)
+
+#plotting the data
+plt.plot(errors)
     
-    theta0 = theta0 - (alpha * (sum1))
-    theta1 = theta1 - (alpha * (sum2))
-    #print(theta0)
-    #print(theta1)
-    #t0[p] = theta0
-    #t1[p] = theta1
-    p=p+1
-
-data[k][3] = theta0
-data[k][4] = theta1
-k +=1
-
-sum1=0
-J_cost = np.zeros((len(x),1))
-for i in range(0,len(x)):
-    J_cost[i]=theta0 + theta1*x[i]
-
-plt.plot(x,theta0 + theta1*x, '-r')
-plt.scatter(x,y)
-plt.legend()
-plt.show()

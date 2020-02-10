@@ -1,0 +1,85 @@
+#importing libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#importing dataset
+dataset = pd.read_table('YearPredictionMSD.txt',sep = ',')
+
+#taking X and Y_actual
+X = dataset.iloc[:1000,1:].values
+Y_actual = dataset.iloc[:1000,0:1].values
+
+#normalizating the data
+for i in range (len(X.T)):
+    X[:,i:i+1] = X[:,i:i+1]/X[:,i:i+1].max()
+#X = X/X.max()
+Y_actual = Y_actual/Y_actual.max()
+#functions
+
+#line function
+def line(m, x, c):
+    return np.dot(x,m) + c
+
+#error function
+def error(Y_act, Y_pred):
+    return np.mean(( Y_act - Y_pred ) ** 2)
+
+#derivative for m's
+def derivative_for_m(x,Y_act, Y_pred):
+    er = Y_act - Y_pred
+#    print('shape of er before multiplication',er.shape)
+#    print('shape of x',x.shape)
+    er = np.multiply(er,x)
+#    print('shape of er after multiplication',er.shape)
+    er = np.mean(er, axis = 0)
+#    print('shape of er after mean',er.shape)
+    er = 2*er
+#    print('shape of er after multiplication by 2',er.shape)
+    return er.reshape(features,1)
+    
+# derivative for c/intercept
+def derivative_for_c(Y_act, Y_pred):
+    return np.mean(2 * (Y_act - Y_pred))
+
+debug = np.zeros((100,4))  
+k=0
+
+#user defined variables
+features = len(X.T)                 #no.of features
+c = np.random.randn()               #intercept
+m = np.random.randn(features, 1)    #m/slope
+iterations = 10000                    #steps
+alpha = 0.0000000006               #learning rate
+
+errors = []
+
+#training dataset
+for i in range(iterations):
+    print(i)
+#    print(m.shape)
+    Y_pred = line(m,X,c)
+    errors.append(error(Y_actual, Y_pred))
+    m = m - alpha * derivative_for_m(X, Y_actual, Y_pred)
+#    print('shape of m = ',m.shape)
+    c = c - alpha * derivative_for_c(Y_actual, Y_pred)
+
+#ploting errors
+plt.plot(errors)
+
+
+#storing values for debugging of code
+#optional
+debug[k,0] = iterations
+debug[k,1] = alpha
+debug[k,2] = errors[0]
+debug[k,3] = errors[-1]
+k += 1
+
+de = debug[:,3:4] - debug[:,2:3]
+debugger = np.zeros((100,5))
+debugger = np.append(debug,de, axis=1)
+
+df = pd.DataFrame(debugger)
+writer = pd.ExcelWriter("debugging.xlsx")
+df.to_excel(writer, 'Sheet1',index = False)

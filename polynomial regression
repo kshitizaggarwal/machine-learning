@@ -1,0 +1,70 @@
+#importing libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#importing dataset
+dataset = pd.read_csv("train.csv")
+
+#taking X and Y_actual
+X = dataset.iloc[:,:26].values
+X = np.append(X, dataset.iloc[:,27:].values,axis=1)
+Y_actual = dataset.iloc[:,26:27].values
+
+X_original = dataset.iloc[:,:26].values
+X_original = np.append(X, dataset.iloc[:,27:].values,axis=1)
+
+#increasing the power for polynomial regression
+for i in range(len(X.T)):
+    X[:,i:i+1] = X[:,i:i+1]**(i+1)
+
+#feature scaling
+for i in range(len(X.T)):
+    X[:,i:i+1] = X[:,i:i+1]/X[:,i:i+1].max()
+
+Y_actual = Y_actual/Y_actual.max()
+
+#functions
+
+#curve function
+def curve(m,x,c):
+    return np.dot(x,m) + c
+
+#error function
+def error(Y_pred, Y_act):
+    return np.mean(( Y_pred - Y_act ) **2)
+
+#derivative function for features/m
+def derivative_of_m(x,Y_pred,Y_act):
+    err = Y_pred - Y_act
+    err = np.multiply(err, x)
+    err = np.mean(err, axis=0)
+    return err.reshape(features,1)
+
+#derivative function for c
+def derivative_of_c(Y_pred, Y_act):
+    return np.mean(2 * (Y_pred - Y_act))
+
+#user defined variables
+features = len(X.T)                 #no.of features
+c = np.random.randn()               #intercept
+m = np.random.randn(features, 1)    #m/slope
+iterations = 700                    #steps
+alpha = 0.0009                      #learning rate
+
+errors = []
+
+for i in range(iterations):
+    print(i)
+    Y_pred = curve(m,X,c)
+    m = m - alpha * derivative_of_m(X, Y_pred, Y_actual)
+    c = c - alpha * derivative_of_c(Y_pred, Y_actual)
+    errors.append(error(Y_pred, Y_actual))
+    
+#plotting error curve
+plt.plot(errors)
+preds = curve(m,X,c)
+
+#plotting preduction curve
+plt.scatter(X[:,7:8],Y_actual,color='red')
+plt.scatter(X[:,7:8],preds,color='blue')

@@ -1,0 +1,67 @@
+#importing libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#importing dataset
+dataset = pd.read_csv("seattleWeather_1948-2017.csv")
+dataset = dataset.dropna(axis = 0)
+
+#getting X and Y_actual
+X = dataset.iloc[:,3:4].values
+Y_actual = dataset.iloc[:,4:].values
+Y_actual = np.array(Y_actual,dtype = np.int64)
+X1 = X[Y_actual==1]      # data when rain occurs
+X0 = X[Y_actual==0]      # data when rain doesnt occurs
+
+#plotting histogram of dataset X
+plt.hist(X)
+
+#calculating probabilities
+# r -----> rain
+# nr -----> not rain
+# P(r)
+p_r = len(Y_actual[Y_actual==1])/len(Y_actual)
+# P(nr)
+p_nr = len(Y_actual[Y_actual==0])/len(Y_actual)
+
+#for P(r|x) and P(nr|x)
+#gaussian function
+def gaussian(x,mean,std):
+    rt = ((2*np.pi)**0.5)*std
+    rt=1/rt
+    exp = np.exp((x - mean) **2 / ((2 * std) **2))
+    exp=1/exp
+    return rt*exp
+
+#accuracy function
+def accuracy(Y_act,Y_pred):
+    counter = 0
+    for i in range(len(Y_act)):
+        if Y_act[i] == Y_pred[i]:
+            counter = counter +1
+    return (counter/len(Y_act))*100
+
+#mean and standard deviation for X
+mean_r = np.mean(X1)
+mean_nr = np.mean(X0)
+
+std_r = np.std(X1)
+std_nr = np.std(X0)
+
+answers = []
+
+#naive_bayes_algorithm
+for i in range(len(X)):
+    x = X[i]
+    #for P(r|x)
+    b_r = (p_r * gaussian(x,mean_r,std_r))/((p_r * gaussian(x,mean_r,std_r)) + (p_nr * gaussian(x,mean_nr,std_nr)))
+    #for P(nr|x)
+    b_nr = (p_nr * gaussian(x,mean_nr,std_nr))/((p_r * gaussian(x,mean_r,std_r)) + (p_nr * gaussian(x,mean_nr,std_nr)))
+    if b_r >= b_nr:
+        answers.append(1)
+    else:
+        answers.append(0)
+
+#finding accuracy for the algorithm
+print('accuracy = ',accuracy(Y_actual,answers))

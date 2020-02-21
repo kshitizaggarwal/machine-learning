@@ -1,0 +1,68 @@
+#importing libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#importing dataset
+dataset = pd.read_csv("seattleWeather_1948-2017.csv")
+dataset = dataset.dropna()
+
+#X and Y_actual
+X = dataset.iloc[:,1:4].values
+Y_actual = dataset.iloc[:,4:].values
+Y_actual = np.array(Y_actual,dtype = np.int64)
+
+#X0 -> Not Rain 
+X0 = dataset[dataset["RAIN"]==False]
+X0 = X0.iloc[:,1:4].values
+#X1 -> Rain
+X1 = dataset[dataset["RAIN"]==True]
+X1 = X1.iloc[:,1:4].values
+
+#calculating probabilities
+# r -----> rain
+# nr -----> not rain
+# P(r)
+p_r = len(Y_actual[Y_actual==1])/len(Y_actual)
+# P(nr)
+p_nr = len(Y_actual[Y_actual==0])/len(Y_actual)
+
+#for P(r|x) and P(nr|x)
+#multivariate_normal
+from scipy.stats import multivariate_normal 
+def func(x,mean,covariance):    
+    return multivariate_normal.pdf(x.T,mean,covariance,allow_singular="allow_singular")
+
+#accuracy function
+def accuracy(Y_act,Y_pred):
+    counter = 0
+    for i in range(len(Y_act)):
+        if Y_act[i] == Y_pred[i]:
+            counter = counter +1
+    return (counter/len(Y_act))*100
+
+#mean and co-variance matrix
+#for Rain
+mean_r = np.mean(X1,axis = 0)
+covariance_r = np.array(pd.DataFrame(X1).cov())
+
+#for Not Rain
+mean_nr = np.mean(X0,axis = 0)
+covariance_nr = np.array(pd.DataFrame(X0).cov())
+
+answers = []
+#naive_bayes_algorithm
+for i in range(len(X)):
+    x = X[i]
+    #for P(r|x)
+    b_r = (p_r * func(x,mean_r,covariance_r))/((p_r * func(x,mean_r,covariance_r)) + (p_nr * func(x,mean_nr,covariance_nr)))
+    #for P(nr|x)
+    b_nr = (p_nr * func(x,mean_nr,covariance_nr))/((p_r * func(x,mean_r,covariance_r)) + (p_nr * func(x,mean_nr,covariance_nr)))
+    if b_r >= b_nr:
+        answers.append(1)
+    else:
+        answers.append(0)
+
+
+#finding accuracy for the algorithm
+print('accuracy = ',accuracy(Y_actual,answers))

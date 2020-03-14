@@ -1,96 +1,76 @@
+#importing libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-dataset = pd.read_csv("ex2data1.csv")
+#importing dataset
+dataset = pd.read_csv("data_tumor_classification.csv")
 
-X = dataset.iloc[:,:2].values
-Y = dataset.iloc[:,-1].values
+#X and Y_actual
+X = dataset.iloc[:,2:32].values
+Y_actual = dataset.iloc[:,1:2].replace(to_replace = ['M','B'],value=[0,1]).values
 
-def sigmoid(a):
-    b = 1 + pow(np.e,-a)
-    b = 1/b
+#normalizating the dataset
+for i in range (len(X.T)):
+    X[:,i:i+1] = X[:,i:i+1]/X[:,i:i+1].max()
+
+'***************** NOTE:- Malignant=0 and Benign=1***********************'
+
+''' PCA
+cov = dataset.iloc[:,2:32].corr()
+u, s, vh = np.linalg.svd(cov)
+'''
+
+#functions
+#sigmoid function
+def sigmoid(x,m,c):
+    z = np.matmul(x,m)
+    b = np.exp(-z)
+    return 1/(1 + b)
+
+#error function
+def cross_entropy_loss(predY,y):
+    try:
+        b = (y* np.log(predY) + ( 1 - y )* np.log ( 1 - predY ))
+        return np.mean(-b) 
+    except:
+        print("error")
+
+#derivative function
+def derivative(predY, x, y):
+    b = np.matmul(x.T,(predY - y))
     return b
 
-def cost(predY, y):
-    b = (y* np.log(predY) + ( 1 - y )* np.log ( 1 - predY ))
-    return -b
+#accuracy function
+def accuracy(Y_act,Y_pred):
+    counter = 0
+    for i in range(len(Y_act)):
+        if Y_act[i] == Y_pred[i]:
+            counter = counter +1
+    return (counter/len(Y_act))*100
 
-def weightDerivative(predY, x, y):
-    b = (predY - y) * x
-    return b
+#user defined variables
+features = len(X.T)                 #no.of features
+c = np.random.randn()               #intercept
+m = np.random.randn(features, 1)    #m/slope
+iterations = 4500                    #steps
+alpha = 0.0000009               #learning rate
 
-m = len(X)
-
-#calculating mean of data set
-mean = sum(X)/m
-X_min = X.min()
-X_max = X.max()
-
-#normalizing dataset X
-X_normalized = (np.subtract(X, mean)) / ( X_max - X_min )
-
-#creating seperate dataset for X_train and X_test
-X_train = X_normalized[:80,]
-X_test = X_normalized[80:,]
-
-#creating seperate dataset for Y_train and Y_test
-Y_train = Y[:80]
-Y_test = Y[80:]
-
-# user defined attributes
-# initializing bais theta0
-bias = np.array(0.1).reshape(1,1)
-
-# initializing weights theta1, theta2
-weights = np.array((0.1,0.1))
-weights = weights.reshape(1,2)
-
-j_theta = 0 
-dx_0 = 0
-dx = 0
-epoch = 100
-alpha = 0.001
-
-#training the data set
-for j in range(epoch):
-    t = j_theta
-    j_theta = 0
-    for i in range(len(X_train)):
-        #calculating a
-        a = np.matmul(weights,X_train[i].reshape(2,1)) + bias
-        total = sum(a.T)
-        
-        #calculating h(x)
-        predY = sigmoid(total)
-        
-        #calculating cost function J(theta)
-        j_theta = j_theta + cost(predY, Y_train[i])
-        dx_0 = dx_0 + weightDerivative(predY,1 ,Y_train[i])
-        dx = dx + weightDerivative(predY, X_train[i], Y_train[i])
-        
-    print("j_theta:{},j={}".format(j_theta,j))
+errors = []
+#training the dataset
+for i in range(iterations):
+#    print(i)
+    predY = sigmoid(X,m,c)
+    errors.append(cross_entropy_loss(predY,Y_actual))
+    m = m - alpha * derivative(predY,X,Y_actual)
+    c = c - alpha * derivative(predY,np.ones(X.shape),Y_actual)
     
-    #updating thetas
-    weights = weights - (alpha * dx)
-    bias = bias - (alpha * dx_0)
+plt.plot(errors)
+
+Y_pred=[]
+for i in range(len(predY)):
+    Y_pred.append(round(float(predY[i])))
+
+#finding accuracy for the algorithm
+print('accuracy = ',accuracy(Y_actual,Y_pred))
     
-#calculating predicted values of Y by using new obtained thetas
-new_a = np.matmul(weights, X_test.reshape(2,20)) + bias
-newY = sigmoid(new_a)
-
-# giving all the values of Y, Y =1 which are greater then 0.5
-pred_Y = np.ones((20,1))
-for i in range(len(Y_test)):
-    if newY.T[i] > 0.5:
-        pred_Y[i] = 1
-    else:
-        pred_Y[i] = 0
-
-# checking for the accuracy of the model     
-counter=0
-for i in range(len(Y_test)):
-    if pred_Y[i]==Y_test[i]:
-        counter = counter +1
-
-accuracy = counter/len(Y_test)    
